@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Schedule Manager</title>
+
+<!-- FullCalendar -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+
+  .auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .auth-box {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 450px;
+  }
+
+  .auth-box h2 {
+    text-align: center;
+    color: #003366;
+    margin-bottom: 10px;
+  }
+
+  .auth-box p {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  .form-group input:focus {
+    outline: none;
+    border-color: #003366;
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+  }
+
+  .auth-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-bottom: 10px;
+  }
+
+  .auth-btn:hover {
+    background-color: #0055aa;
+  }
+
+  .auth-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  .message {
+    font-size: 14px;
+    margin-top: 10px;
+    text-align: center;
+    padding: 10px;
+    border-radius: 6px;
+    display: none;
+  }
+
+  .error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+  }
+
+  .success-message {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+  }
+
+  .toggle-link {
+    text-align: center;
+    margin-top: 15px;
+    color: #003366;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .toggle-link:hover {
+    color: #0055aa;
+  }
+
+  .logout-bar {
+    background: #003366;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .logout-bar span {
+    font-weight: 600;
+  }
+
+  .logout-btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid white;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+  }
+
+  .logout-btn:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  .pm-container {
+    max-width: 95%;
+    margin: 20px auto;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .pm-container h2 {
+    text-align: center;
+    color: #003366;
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+
+  .action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .action-bar h3 {
+    margin: 0;
+    color: #003366;
+    font-size: 18px;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+  }
+
+  .export-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background-color 0.2s;
+  }
+
+  .export-btn:hover {
+    background-color: #218838;
+  }
+
+  .toggle-completed-btn {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background-color 0.2s;
+  }
+
+  .toggle-completed-btn:hover {
+    background-color: #5a6268;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background: white;
+  }
+
+  th, td {
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    text-align: center;
+  }
+
+  th {
+    background-color: #003366;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+  }
+
+  th:hover {
+    background-color: #0055aa;
+  }
+
+  th.sortable::after {
+    content: " ⇅";
+    font-size: 0.8em;
+    opacity: 0.5;
+  }
+
+  th.sort-asc::after {
+    content: " ▲";
+    opacity: 1;
+  }
+
+  th.sort-desc::after {
+    content: " ▼";
+    opacity: 1;
+  }
+
+  .input-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  input, select, button {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: #003366;
+    box-shadow: 0 0 0 2px rgba(0, 51, 102, 0.1);
+  }
+
+  button {
+    background-color: #003366;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    border: none;
+    transition: background-color 0.2s;
+  }
+
+  button:hover {
+    background-color: #0055aa;
+  }
+
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  tr[data-status="In Queue"] { background-color: #fffef0; }
+  tr[data-status="In Progress"] { background-color: #f0f8ff; }
+  tr[data-status="Completed"] { background-color: #f0fff4; }
+  tr[data-status="Delayed"] { background-color: #fff5f5; }
+
+  #calendar {
+    max-width: 95%;
+    margin: 30px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .calendar-controls {
+    max-width: 95%;
+    margin: 20px auto;
+    text-align: center;
+  }
+
+  .calendar-controls button {
+    margin: 0 5px;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+
+  .calendar-controls button.active {
+    background-color: #0055aa;
+    font-weight: bold;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 30px;
+    border: none;
+    width: 80%;
+    max-width: 450px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  .close {
+    color: #999;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+  }
+
+  .close:hover {
+    color: #333;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .note {
+    font-size: 12px;
+    color: #666;
+    margin-top: 15px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .setup-warning {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    color: #856404;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .info-badge {
+    display: inline-block;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    margin-left: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Login/Registration Screen -->
+<div id="authScreen" class="auth-container">
+  <div class="auth-box">
+    <!-- Setup Warning (will disappear when configured) -->
+    <div id="setupWarning" class="setup-warning hidden">
+      ⚠️ Supabase not configured! Add your credentials in the code.
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <h2>🔒 PM Schedule Manager</h2>
+      <p>Please log in to continue</p>
+      <div class="form-group">
+        <label for="loginEmail">Email Address</label>
+        <input type="email" id="loginEmail" placeholder="Enter your email" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" required />
+      </div>
+      <button class="auth-btn" onclick="attemptLogin()" id="loginBtn">Log In</button>
+      <div id="loginMessage" class="message error-message"></div>
+      <div class="toggle-link" onclick="showRegisterForm()">Don't have an account? Register here</div>
+    </div>
+
+    <!-- Registration Form -->
+    <div id="registerForm" class="hidden">
+      <h2>🔒 Create Account</h2>
+      <p>Register to access PM Schedule Manager</p>
+      <div class="form-group">
+        <label for="registerEmail">Email Address</label>
+        <input type="email" id="registerEmail" placeholder="Enter your email" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label for="registerPassword">Password</label>
+        <input type="password" id="registerPassword" placeholder="Create password (min 6 characters)" autocomplete="new-password" required />
+      </div>
+      <div class="form-group">
+        <label for="registerConfirmPassword">Confirm Password</label>
+        <input type="password" id="registerConfirmPassword" placeholder="Confirm password" autocomplete="new-password" required />
+      </div>
+      <button class="auth-btn" onclick="attemptRegister()" id="registerBtn">Create Account</button>
+      <div id="registerMessage" class="message"></div>
+      <div class="toggle-link" onclick="showLoginForm()">Already have an account? Log in here</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Application -->
+<div id="mainApp" class="hidden">
+  <div class="logout-bar">
+    <span>Welcome, <span id="loggedInUser"></span></span>
+    <button class="logout-btn" onclick="logout()">Log Out</button>
+  </div>
+
+  <div class="pm-container">
+    <h2>PM Schedule Manager</h2>
+    
+    <div class="action-bar">
+      <div>
+        <h3>Active PM Schedule <span class="info-badge" id="activeBadge">0 active</span></h3>
+      </div>
+      <div class="btn-group">
+        <button class="toggle-completed-btn" onclick="toggleShowCompleted()" id="toggleBtn">
+          Show Completed
+        </button>
+        <button class="export-btn" onclick="exportToSpreadsheet()">
+          📊 Export All Data
+        </button>
+      </div>
+    </div>
+
+    <table id="pmTable">
+      <thead>
+        <tr>
+          <th>Truck #</th>
+          <th class="sortable" id="sortDateHeader" onclick="sortByDate()">Next PM Date/Time</th>
+          <th>PM Type</th>
+          <th>% Due</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="pmBody"></tbody>
+    </table>
+
+    <div class="input-row">
+      <input type="text" id="truckNum" placeholder="Truck #" style="width: 100px;" />
+      <input type="date" id="pmDate" style="width: 150px;" />
+      <input type="time" id="pmTime" value="08:00" style="width: 120px;" />
+      <select id="pmType" style="width: 140px;">
+        <option value="">PM Type</option>
+        <option value="PMA">PMA (2 hrs)</option>
+        <option value="PMB">PMB (4 hrs)</option>
+        <option value="PMC">PMC (6 hrs)</option>
+      </select>
+      <input type="number" id="percentDue" placeholder="% Due" min="0" max="100" style="width: 100px;" />
+      <select id="status" style="width: 130px;">
+        <option value="In Queue">In Queue</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+        <option value="Delayed">Delayed</option>
+      </select>
+      <button type="button" id="addTruckBtn" onclick="addTruck()">Add Truck</button>
+    </div>
+
+    <div class="calendar-controls">
+      <button id="viewDay" onclick="changeView('timeGridDay')">Day</button>
+      <button id="viewWeek" onclick="changeView('timeGridWeek')">Week</button>
+      <button id="view2Week" onclick="changeView('timeGrid2Week')">2 Weeks</button>
+      <button id="viewMonth" onclick="changeView('dayGridMonth')" class="active">Month</button>
+    </div>
+
+    <div id="calendar"></div>
+  </div>
+</div>
+
+<!-- Modal for event details -->
+<div id="detailsModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3 style="color: #003366; margin-top: 0;">PM Details</h3>
+    <p id="modalContent" style="line-height: 1.8;"></p>
+  </div>
+</div>
+
+<script>
+// ===== SUPABASE CONFIGURATION =====
+const SUPABASE_URL = 'https://aogzfrrkntulftihdrdf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ3pmcnJrbnR1bGZ0aWhkcmRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0NTc0NjYsImV4cCI6MjA3NzAzMzQ2Nn0.qp6NWw8LuFsB6E2LWiJXkxduWxP3uw8yuR32dBHXMbA';
+
+// Initialize Supabase client
+let supabase;
+try {
+  if (SUPABASE_URL !== 'YOUR_SUPABASE_URL_HERE' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    document.getElementById('setupWarning').classList.remove('hidden');
+    console.error('⚠️ Supabase not configured! Please add your URL and API key.');
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase:', error);
+}
+
+// Global variables
+let currentUser = null;
+let pmData = [];
+let allPmData = []; // Store all data including completed
+let calendar;
+let sortOrder = "asc";
+let currentView = "dayGridMonth";
+let showCompleted = false;
+
+// ===== AUTHENTICATION FUNCTIONS =====
+
+function showMessage(elementId, message, type) {
+  const element = document.getElementById(elementId);
+  element.textContent = message;
+  element.className = `message ${type}-message`;
+  element.style.display = 'block';
+  setTimeout(() => {
+    element.style.display = 'none';
+  }, 5000);
+}
+
+function showLoginForm() {
+  document.getElementById('loginForm').classList.remove('hidden');
+  document.getElementById('registerForm').classList.add('hidden');
+}
+
+function showRegisterForm() {
+  document.getElementById('registerForm').classList.remove('hidden');
+  document.getElementById('loginForm').classList.add('hidden');
+}
+
+async function attemptRegister() {
+  if (!supabase) {
+    showMessage('registerMessage', 'System not configured. Contact administrator.', 'error');
+    return;
+  }
+
+  const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+  const password = document.getElementById('registerPassword').value;
+  const confirmPassword = document.getElementById('registerConfirmPassword').value;
+  const btn = document.getElementById('registerBtn');
+
+  if (!email || !password || !confirmPassword) {
+    showMessage('registerMessage', 'Please fill in all fields', 'error');
+    return;
+  }
+
+  if (password.length < 6) {
+    showMessage('registerMessage', 'Password must be at least 6 characters', 'error');
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    showMessage('registerMessage', 'Passwords do not match', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating Account...';
+
+  const { data, error } = await supabase.auth.signUp({
+    email: email,
+    password: password,
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Create Account';
+
+  if (error) {
+    showMessage('registerMessage', error.message, 'error');
+    return;
+  }
+
+  showMessage('registerMessage', 'Account created successfully! You can now log in.', 'success');
+  
+  setTimeout(() => {
+    document.getElementById('registerEmail').value = '';
+    document.getElementById('registerPassword').value = '';
+    document.getElementById('registerConfirmPassword').value = '';
+    showLoginForm();
+  }, 2000);
+}
+
+async function attemptLogin() {
+  if (!supabase) {
+    showMessage('loginMessage', 'System not configured. Contact administrator.', 'error');
+    return;
+  }
+
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+
+  if (!email || !password) {
+    showMessage('loginMessage', 'Please enter email and password', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Logging In...';
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password,
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Log In';
+
+  if (error) {
+    showMessage('loginMessage', 'Invalid email or password', 'error');
+    return;
+  }
+
+  currentUser = data.user;
+  document.getElementById('loggedInUser').textContent = email;
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  
+  await initializeApp();
+}
+
+async function logout() {
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+  currentUser = null;
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  showLoginForm();
+}
+
+async function checkSession() {
+  if (!supabase) return false;
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('loggedInUser').textContent = session.user.email;
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    await initializeApp();
+    return true;
+  }
+  return false;
+}
+
+// ===== DATA FUNCTIONS =====
+
+async function loadData() {
+  if (!supabase) return [];
+  
+  const { data, error } = await supabase
+    .from('pm_schedules')
+    .select('*')
+    .order('pm_date_time', { ascending: true });
+  
+  if (error) {
+    console.error('Error loading data:', error);
+    return [];
+  }
+  
+  return data.map(row => ({
+    id: row.id,
+    truck: row.truck_number,
+    dateTime: row.pm_date_time,
+    date: row.pm_date_time.split(' ')[0],
+    type: row.pm_type,
+    percent: row.percent_due,
+    status: row.status
+  }));
+}
+
+async function addTruck() {
+  if (!supabase) {
+    alert('System not configured. Contact administrator.');
+    return;
+  }
+
+  const truck = document.getElementById('truckNum').value.trim();
+  const date = document.getElementById('pmDate').value;
+  const time = document.getElementById('pmTime').value;
+  const type = document.getElementById('pmType').value;
+  const percent = parseInt(document.getElementById('percentDue').value) || 0;
+  const status = document.getElementById('status').value;
+
+  if (!truck || !date || !type) {
+    alert('Please fill in Truck #, Date, and PM Type');
+    return;
+  }
+
+  const dateTime = `${date} ${time}`;
+
+  const { data, error } = await supabase
+    .from('pm_schedules')
+    .insert([{
+      truck_number: truck,
+      pm_date_time: dateTime,
+      pm_type: type,
+      percent_due: percent,
+      status: status
+    }])
+    .select();
+
+  if (error) {
+    console.error('Error adding PM:', error);
+    alert('Failed to add truck. Please try again.');
+    return;
+  }
+
+  // Clear inputs
+  document.getElementById('truckNum').value = '';
+  document.getElementById('pmDate').value = '';
+  document.getElementById('pmTime').value = '08:00';
+  document.getElementById('pmType').value = '';
+  document.getElementById('percentDue').value = '';
+
+  // Reload data
+  await refreshData();
+}
+
+async function updatePercent(index, newPercent) {
+  if (!supabase) return;
+  
+  const item = pmData[index];
+  const { error } = await supabase
+    .from('pm_schedules')
+    .update({ percent_due: parseInt(newPercent) })
+    .eq('id', item.id);
+
+  if (!error) {
+    await refreshData();
+  }
+}
+
+async function updateStatus(index, newStatus) {
+  if (!supabase) return;
+  
+  const item = pmData[index];
+  const { error } = await supabase
+    .from('pm_schedules')
+    .update({ status: newStatus })
+    .eq('id', item.id);
+
+  if (!error) {
+    await refreshData();
+  }
+}
+
+async function removeRow(index) {
+  if (!supabase) return;
+  
+  if (!confirm('Are you sure you want to remove this PM?')) return;
+  
+  const item = pmData[index];
+  const { error } = await supabase
+    .from('pm_schedules')
+    .delete()
+    .eq('id', item.id);
+
+  if (!error) {
+    await refreshData();
+  }
+}
+
+async function refreshData() {
+  allPmData = await loadData();
+  filterData();
+  renderTable();
+  updateActiveBadge();
+}
+
+function filterData() {
+  if (showCompleted) {
+    pmData = allPmData;
+  } else {
+    pmData = allPmData.filter(item => item.status !== 'Completed');
+  }
+}
+
+function toggleShowCompleted() {
+  showCompleted = !showCompleted;
+  const btn = document.getElementById('toggleBtn');
+  btn.textContent = showCompleted ? 'Hide Completed' : 'Show Completed';
+  filterData();
+  renderTable();
+  updateActiveBadge();
+}
+
+function updateActiveBadge() {
+  const activeCount = allPmData.filter(item => item.status !== 'Completed').length;
+  const completedCount = allPmData.filter(item => item.status === 'Completed').length;
+  document.getElementById('activeBadge').textContent = 
+    `${activeCount} active${completedCount > 0 ? ', ' + completedCount + ' completed' : ''}`;
+}
+
+// ===== EXPORT FUNCTION =====
+
+async function exportToSpreadsheet() {
+  if (!supabase) {
+    alert('System not configured. Contact administrator.');
+    return;
+  }
+
+  // Fetch all data from database
+  const exportData = await loadData();
+  
+  if (exportData.length === 0) {
+    alert('No data to export.');
+    return;
+  }
+
+  // Create CSV content
+  const headers = ['Truck #', 'Date/Time', 'PM Type', '% Due', 'Status'];
+  const csvContent = [
+    headers.join(','),
+    ...exportData.map(row => [
+      row.truck,
+      `"${row.dateTime}"`,
+      row.type,
+      row.percent,
+      row.status
+    ].join(','))
+  ].join('\n');
+
+  // Create blob and download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  const timestamp = new Date().toISOString().split('T')[0];
+  link.setAttribute('href', url);
+  link.setAttribute('download', `PM_Schedule_Export_${timestamp}.csv`);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// ===== HELPER FUNCTIONS =====
+
+function getPMDuration(pmType) {
+  switch(pmType.toUpperCase()) {
+    case "PMA": return 2;
+    case "PMB": return 4;
+    case "PMC": return 6;
+    default: return 0;
+  }
+}
+
+function getStatusColor(status) {
+  switch (status) {
+    case "In Queue": return "#FFD700";
+    case "In Progress": return "#1E90FF";
+    case "Completed": return "#32CD32";
+    case "Delayed": return "#DC143C";
+    default: return "#808080";
+  }
+}
+
+function formatDisplayDateTime(dateTime) {
+  if (!dateTime) return "";
+  const parts = dateTime.split(" ");
+  if (parts.length === 2) {
+    return `${parts[0]} ${parts[1]}`;
+  }
+  return dateTime;
+}
+
+function sortByDate() {
+  pmData.sort((a, b) => {
+    const dateA = new Date(a.dateTime || a.date);
+    const dateB = new Date(b.dateTime || b.date);
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+  });
+  
+  sortOrder = sortOrder === "asc" ? "desc" : "asc";
+  
+  const sortDateHeader = document.getElementById('sortDateHeader');
+  sortDateHeader.classList.remove("sort-asc", "sort-desc");
+  sortDateHeader.classList.add(sortOrder === "asc" ? "sort-desc" : "sort-asc");
+  
+  renderTable();
+}
+
+function renderTable() {
+  const pmBody = document.getElementById("pmBody");
+  pmBody.innerHTML = "";
+  
+  pmData.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-status", row.status);
+    const displayDateTime = formatDisplayDateTime(row.dateTime || row.date);
+    tr.innerHTML = `
+      <td>${row.truck}</td>
+      <td>${displayDateTime}</td>
+      <td>${row.type}</td>
+      <td>
+        <input type="number" 
+               value="${row.percent}" 
+               min="0" 
+               max="100" 
+               style="width: 60px; padding: 4px; text-align: center;"
+               onchange="updatePercent(${index}, this.value)" />%
+      </td>
+      <td>
+        <select onchange="updateStatus(${index}, this.value)">
+          <option value="In Queue" ${row.status === "In Queue" ? "selected" : ""}>In Queue</option>
+          <option value="In Progress" ${row.status === "In Progress" ? "selected" : ""}>In Progress</option>
+          <option value="Completed" ${row.status === "Completed" ? "selected" : ""}>Completed</option>
+          <option value="Delayed" ${row.status === "Delayed" ? "selected" : ""}>Delayed</option>
+        </select>
+      </td>
+      <td><button onclick="removeRow(${index})">Remove</button></td>
+    `;
+    pmBody.appendChild(tr);
+  });
+  
+  renderCalendar();
+}
+
+function renderCalendar() {
+  // Use ALL data (including completed) for calendar display
+  const events = allPmData.map((item, index) => {
+    const duration = getPMDuration(item.type);
+    let title = `${item.truck} - ${item.type}`;
+    
+    if (item.status === "In Progress" && duration > 0) {
+      title += ` (${duration}h)`;
+    }
+
+    let endDateTime = null;
+    if (item.dateTime && duration > 0) {
+      const startDate = new Date(item.dateTime);
+      endDateTime = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
+    }
+
+    return {
+      id: index,
+      title: title,
+      start: item.dateTime || item.date,
+      end: endDateTime,
+      backgroundColor: getStatusColor(item.status),
+      borderColor: getStatusColor(item.status),
+      extendedProps: { 
+        percent: item.percent, 
+        status: item.status,
+        duration: duration,
+        truck: item.truck
+      }
+    };
+  });
+
+  const calendarEl = document.getElementById("calendar");
+  if (!calendar) {
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: currentView,
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: ''
+      },
+      height: "auto",
+      slotMinTime: "06:00:00",
+      slotMaxTime: "20:00:00",
+      slotDuration: "00:30:00",
+      allDaySlot: true,
+      nowIndicator: true,
+      eventOverlap: true,
+      views: {
+        timeGrid2Week: {
+          type: 'timeGrid',
+          duration: { weeks: 2 },
+          buttonText: '2 weeks',
+          slotLabelInterval: '01:00'
+        }
+      },
+      events: events,
+      eventClick: function(info) {
+        showEventDetails(info);
+      }
+    });
+    calendar.render();
+  } else {
+    calendar.removeAllEvents();
+    calendar.addEventSource(events);
+  }
+}
+
+function changeView(viewType) {
+  currentView = viewType;
+  if (calendar) {
+    calendar.changeView(viewType);
+  }
+  
+  // Update active button
+  document.querySelectorAll('.calendar-controls button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+}
+
+function showEventDetails(info) {
+  const data = info.event.extendedProps;
+  const modal = document.getElementById("detailsModal");
+  const modalContent = document.getElementById("modalContent");
+
+  let durationText = data.duration > 0 ? `${data.duration} hours` : 'N/A';
+
+  modalContent.innerHTML = `
+    <strong>Truck:</strong> ${data.truck}<br>
+    <strong>Date/Time:</strong> ${info.event.startStr}<br>
+    <strong>Type:</strong> ${info.event.title.split(' - ')[1]}<br> 
+    <strong>Duration:</strong> ${durationText}<br>
+    <strong>% Due:</strong> ${data.percent}%<br>
+    <strong>Status:</strong> ${data.status}
+  `;
+
+  modal.style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById("detailsModal").style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById("detailsModal");
+  if (event.target === modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// ===== INITIALIZATION =====
+
+async function initializeApp() {
+  await refreshData();
+}
+
+// Check for existing session on load
+document.addEventListener('DOMContentLoaded', async function() {
+  const sessionExists = await checkSession();
+  
+  if (!sessionExists) {
+    document.getElementById('authScreen').classList.remove('hidden');
+  }
+
+  // Enter key support
+  document.getElementById('loginEmail').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+  document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+  document.getElementById('registerConfirmPassword').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') attemptRegister();
+  });
+});
+</script>
+</body>
+</html>
